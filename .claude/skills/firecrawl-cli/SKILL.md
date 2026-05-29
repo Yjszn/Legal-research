@@ -1,300 +1,283 @@
 ---
 name: firecrawl
 description: |
-  Search, scrape, and interact with the web via the Firecrawl CLI. Use this skill whenever the user wants to search the web, find articles, research a topic, look something up online, scrape a webpage, grab content from a URL, get data from a website, crawl documentation, download a site, or interact with pages that need clicks or logins. Also use when they say "fetch this page", "pull the content from", "get the page at https://", or reference external websites. This provides real-time web search with full page content and interact capabilities — beyond what Claude can do natively with built-in tools. Do NOT trigger for local file operations, git commands, deployments, or code editing tasks.
+  Firecrawl gives AI agents and apps fast, reliable web context with
+  strong search, scraping, and interaction tools. One install command
+  sets up three skill segments: live CLI tools, app-integration build
+  skills, and outcome-focused workflow skills. Route the reader to the
+  right usage path after install.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl *)
 ---
 
-# Firecrawl CLI
+# Firecrawl
 
-Search, scrape, and interact with the web. Returns clean markdown optimized for LLM context windows.
+Firecrawl helps agents search first, scrape clean content, interact
+with live pages when plain extraction is not enough, and produce
+finished deliverables from web data.
 
-Run `firecrawl --help` or `firecrawl <command> --help` for full option details.
+## Install
 
-If the task is to integrate Firecrawl into an application, add `FIRECRAWL_API_KEY` to a project, or choose endpoint usage in product code, use the `firecrawl-build` skills. If the task is an outcome workflow such as deep research, SEO audit, QA, lead generation, knowledge-base creation, dashboard reporting, shopping research, or website design-system extraction, use the `firecrawl-workflows` skills. They are already installed alongside this CLI skill when you run `firecrawl init`.
+One command installs everything — the Firecrawl CLI for live web work,
+the build skills for integrating Firecrawl into application code, **and**
+the workflow skills for producing repeatable deliverables. It also opens
+browser auth so the human can sign in or create an account.
 
-## Prerequisites
-
-Must be installed and authenticated. Check with `firecrawl --status`.
-
-```
-  🔥 firecrawl cli v1.8.0
-
-  ● Authenticated via FIRECRAWL_API_KEY
-  Concurrency: 0/100 jobs (parallel scrape limit)
-  Credits: 500,000 remaining
+```bash
+npx -y firecrawl-cli@latest init --all --browser
 ```
 
-- **Concurrency**: Max parallel jobs. Run parallel operations up to this limit.
-- **Credits**: Remaining API credits. Each operation consumes credits.
+This gives you:
 
-If not ready, see [rules/install.md](rules/install.md). For output handling guidelines, see [rules/security.md](rules/security.md).
+- **CLI tools** — `firecrawl search`, `firecrawl scrape`, `firecrawl interact`, `firecrawl ask`, `firecrawl docs-search`, and more
+- **CLI skills** ([`firecrawl/cli`](https://github.com/firecrawl/cli)) — teach the agent how to drive the Firecrawl CLI during its own session: which command to run, when to scrape vs search vs interact, how to chain results, and how to recover when a job fails. Use these when the agent itself needs web data right now.
+- **Build skills** ([`firecrawl/skills`](https://github.com/firecrawl/skills)) — teach the agent how to add Firecrawl to a product's codebase: pick the right API endpoint, install the matching SDK, store `FIRECRAWL_API_KEY` safely, write the call site to match the project's conventions, and ship a smoke-tested integration. Use these when the agent is shipping code that other people will run, not running the agent's own web tools.
+- **Workflow skills** ([`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows)) — turn Firecrawl web data into finished deliverables such as research briefs, SEO audits, lead lists, QA reports, knowledge bases, and design clones. Use these when the agent's job is to produce a finished artifact, not raw extraction or product code.
+- **Browser auth** — walks the human through sign-in or account creation
 
-Before doing real work, verify the setup with one small request:
+The three skill segments map to three different jobs:
+
+| Segment | Question it answers | Where the work runs |
+| ------- | ------------------- | ------------------- |
+| CLI skills | "Which Firecrawl command should I run right now?" | In the agent's own terminal session |
+| Build skills | "How do I add a Firecrawl API call to this codebase?" | Inside the user's product code |
+| Workflow skills | "What's the finished deliverable and how do I produce it?" | In the agent's session, producing an artifact |
+
+Before doing real work, verify the install:
 
 ```bash
 mkdir -p .firecrawl
+firecrawl --status
 firecrawl scrape "https://firecrawl.dev" -o .firecrawl/install-check.md
 ```
 
-```bash
-firecrawl search "query" --scrape --limit 3
+## Choose Your Path
+
+All paths use the same install above. The difference is what you do
+next.
+
+- **Need web data during this session** -> Path A (live tools)
+- **Need to add Firecrawl to app code** -> Path B (app integration)
+- **Need a finished deliverable from web data** -> Path C (workflow skills)
+- **Need more than one of the above** -> do them in sequence; the install already covers everything
+- **Need an account or API key first** -> Path D (auth only)
+- **Don't want to install anything** -> Path E (REST API directly)
+
+---
+
+## Path A: Live Web Tools
+
+Use this when you need web data during your work: searching the web,
+scraping known URLs, interacting with live pages, crawling docs, or
+mapping a site.
+
+After install, hand off to the CLI skill:
+
+- `firecrawl/cli` for the overall command workflow
+- `firecrawl-search` when you need search first
+- `firecrawl-scrape` when you already have a URL
+- `firecrawl-interact` when the page needs clicks, forms, or login
+- `firecrawl-crawl` for bulk extraction
+- `firecrawl-map` for URL discovery
+- `firecrawl-ask` when a Firecrawl call fails or returns unexpected output — pass the failing `jobId` and the AI support agent diagnoses it from your team's job logs and account state
+- `firecrawl-docs-search` for "how does Firecrawl handle X?" questions — answers grounded in current docs with source citations
+
+Default flow for live web work:
+
+1. start with search when you need discovery
+2. move to scrape when you have a URL
+3. use interact only when the page needs clicks, forms, or login
+4. if any step fails or returns unexpected output, run `firecrawl ask` with the failing `jobId` instead of guessing
+
+If the task becomes "wire Firecrawl into product code," switch to Path B.
+
+---
+
+## Path B: Integrate Firecrawl Into an App
+
+Use this when you're building an application, agent, or workflow that
+calls the Firecrawl API **from code** — meaning the integration will run
+inside the user's product (a web app, backend service, script, agent
+loop, or pipeline) rather than from the agent's own terminal session.
+
+This is the key difference from Path A: Path A runs `firecrawl ...`
+commands during the current session to fetch data for the agent itself.
+Path B writes code that will keep running long after the agent stops,
+using `FIRECRAWL_API_KEY` from the project's `.env` or runtime config
+and the matching Firecrawl SDK in the project's language.
+
+The build skills are already installed from the same command above. No
+separate install needed.
+
+Choose the project mode before writing code:
+
+- **Fresh project** -> pick the stack, install the SDK, add env vars, and run a smoke test
+- **Existing project** -> inspect the repo first, then integrate Firecrawl where the project already handles APIs and secrets
+
+If you already have a key, save it to the project's environment:
+
+```dotenv
+FIRECRAWL_API_KEY=fc-...
 ```
 
-## Workflow
+Then hand off to the build skill that fits the step:
 
-Follow this escalation pattern:
+- `firecrawl-build` for the overall build workflow and endpoint routing
+- `firecrawl-build-onboarding` for auth and project setup (API key, SDK install, smoke test)
+- `firecrawl-build-scrape` when the feature scrapes a known URL
+- `firecrawl-build-search` when the feature starts with a query and discovers pages
+- `firecrawl-build-interact` when the feature needs clicks, forms, or navigation after a scrape
+- `firecrawl-build-parse` when the feature parses local or non-public document files (PDF, DOCX, XLSX, etc.)
 
-1. **Search** - No specific URL yet. Find pages, answer questions, discover sources.
-2. **Scrape** - Have a URL. Extract its content directly.
-3. **Map + Scrape** - Large site or need a specific subpage. Use `map --search` to find the right URL, then scrape it.
-4. **Crawl** - Need bulk content from an entire site section (e.g., all /docs/).
-5. **Monitor** - Need recurring checks or ongoing alerts. Prefer setting a monitor with `--page` plus `--goal` instead of doing repeated one-off scrapes.
-6. **Interact** - Scrape first, then interact with the page (pagination, modals, form submissions, multi-step navigation).
+The required question in the build path is:
 
-| Need                        | Command               | When                                                      |
-| --------------------------- | --------------------- | --------------------------------------------------------- |
-| Find pages on a topic       | `search`              | No specific URL yet                                       |
-| Get a page's content        | `scrape`              | Have a URL, page is static or JS-rendered                 |
-| Find URLs within a site     | `map`                 | Need to locate a specific subpage                         |
-| Bulk extract a site section | `crawl`               | Need many pages (e.g., all /docs/)                        |
-| AI-powered data extraction  | `agent`               | Need structured data from complex sites                   |
-| Interact with a page        | `scrape` + `interact` | Content requires clicks, form fills, pagination, or login |
-| Download a site to files    | `download`            | Save an entire site as local files                        |
-| Parse a local file          | `parse`               | File on disk (PDF, DOCX, XLSX, etc.) — not a URL          |
-| Watch pages for changes     | `monitor`             | Schedule recurring scrapes/crawls, diff against snapshots |
+- **What should Firecrawl do in the product?**
 
-For detailed command reference, run `firecrawl <command> --help`.
+Use the answer to route to `/search`, `/scrape`, `/interact`, `/parse`, `/crawl`, or `/map`, then run one real Firecrawl request as a smoke test.
 
-**Scrape vs interact:**
+If you do not have a key yet, do Path D first.
 
-- Use `scrape` first. It handles static pages and JS-rendered SPAs.
-- Use `scrape` + `interact` when you need to interact with a page, such as clicking buttons, filling out forms, navigating through a complex site, infinite scroll, or when scrape fails to grab all the content you need.
-- Never use interact for web searches - use `search` instead.
+---
 
-**Monitor:** Schedule recurring scrapes or crawls and diff each result against the last retained snapshot. Bias toward `monitor` when the user's goal is ongoing change detection, alerting, or repeated checks over time. For a single page, default to setting a monitor with `--page <url>` and `--goal "..."`. Use for product pages, docs, blogs, changelogs, competitor sites — any page where changes matter. Each monitor should include a short `goal` describing what changes matter, and each check labels pages as `same`, `new`, `changed`, `removed`, or `error`, with webhook and email notification options.
+## Path C: Repeatable Deliverables
 
-When writing `--goal`, convert the user's monitoring intent into a concise 2-3 sentence monitor goal, similar to the web app setup flow:
+Use this when the goal is a finished artifact powered by Firecrawl web
+data — a research brief, SEO audit, QA report, lead list, knowledge
+base, competitive intel digest, or a cloned design system — not raw web
+extraction and not product-code integration.
 
-- Start with `Alert when ...` and state what should trigger an alert using the user's stated intent.
-- Restate scope the user mentioned, such as top N, price, role type, company, region, topic, status, or a specific entity.
-- Include an `Ignore ...` sentence only for intent-specific exclusions that are obvious from the request, such as points/comments for rankings, unrelated marketing copy for pricing, or general company-page updates for jobs.
-- Do not repeat generic noise exclusions in every goal; the judge already handles whitespace, casing, punctuation, encoding, formatting-only changes, request/session IDs, cache busters, tracking params, generic metadata noise, and unrelated page chrome.
-- Do not invent page-specific sections, entities, thresholds, exclusions, or business rules unless the user mentioned them.
-- If the user is vague, keep the goal broad rather than guessing exclusions.
-- If the user asks for "any change", preserve that and do not add exclusions.
-- If the user mentions noise they do not care about, include that explicitly.
+Workflow skills infer from context first and only ask short clarifying
+questions when an input would block the work. They also call out
+independently parallelizable units so sub-agents can fan out across
+competitors, pages, or sources.
 
-Good goal examples:
+Start with the umbrella `firecrawl-workflows` skill — it inspects the
+user's request and routes to the right workflow (research, SEO, lead
+gen, QA, knowledge base, design clone, and others). If the agent
+already knows which workflow to run, hand off to that workflow skill
+directly.
 
-- User intent: `top 10 hackernews stories`
-  Goal: `Alert when stories enter, leave, or change rank within the Hacker News top 10. Ignore points, comments, and timestamps. Do not alert on changes outside the top 10.`
-- User intent: `pricing changes`
-  Goal: `Alert when pricing information changes, including prices, plan names, billing periods, tiers, limits, or included features. Ignore unrelated marketing copy, testimonials, and regional currency display changes unless the underlying offer changes.`
-- User intent: `new engineering roles`
-  Goal: `Alert when a new engineering role is posted. Ignore general company-page updates unless they add, remove, or change an engineering role.`
-- User intent: `track this page`
-  Goal: `Alert when substantive visible content on this page changes.`
-- User intent: `any change`
-  Goal: `Alert when any visible page content changes, including copy, numbers, timestamps, counters, links, and layout text.`
+The full skill list lives in the [workflows repo](https://github.com/firecrawl/firecrawl-workflows).
 
-Subcommands: `create | list | get | update | delete | run | checks | check`.
+Default flow for workflow deliverables:
 
-```bash
-# create from flags
-firecrawl monitor create --name "Blog" --schedule "every 5 minutes" \
-  --goal "Alert when a new blog post is published." \
-  --page https://example.com/blog --email alerts@example.com
+1. confirm the workflow and final artifact with the user
+2. collect web evidence with Firecrawl through the CLI or equivalent tool surface
+3. save or cite source evidence so claims are traceable
+4. run independent research units in parallel when available
+5. synthesize findings into the requested deliverable
+6. include a short "rerun inputs" block when the workflow could be automated
 
-# multiple pages
-firecrawl monitor create --name "Product pages" --schedule "every 5 minutes" \
-  --goal "Alert when pricing, docs, or changelog content changes." \
-  --scrape-urls https://example.com/pricing,https://example.com/docs,https://example.com/changelog
+If the underlying web work fails or the request shifts to "wire Firecrawl into product code," switch to Path A or Path B.
 
-# webhook notifications
-firecrawl monitor create --name "Docs webhook" --schedule "every 5 minutes" \
-  --goal "Alert when docs content changes." \
-  --page https://example.com/docs \
-  --webhook-url https://example.com/webhook \
-  --webhook-events monitor.page,monitor.check.completed
+---
 
-# or from JSON (positional file, or piped stdin)
-firecrawl monitor create monitor.json
-cat monitor.json | firecrawl monitor create
+## Path D: Account Authorization Or API Key
 
-firecrawl monitor list --limit 20
-firecrawl monitor run <monitorId>             # trigger a check now
-firecrawl monitor checks <monitorId>          # list checks
-firecrawl monitor check <monitorId> <checkId> --page-status changed
-firecrawl monitor update <monitorId> --state paused
-firecrawl monitor delete <monitorId>
-```
+Use this when the human still needs to sign up, sign in, authorize
+access, or obtain an API key.
 
-Schedules accept cron (`--cron "*/5 * * * *"`) or natural language (`--schedule "every 5 minutes"`). Minimum interval is 5 minutes. Targets are `--page <url>` for one page, `--scrape-urls a,b,c` for multiple scrape URLs, or `--crawl-url <url>` for a whole-site crawl each check. Use `--goal` for flag-based monitor creation, or include `"goal": "..."` in JSON payloads. Note: `--state` (not `--status`) sets active/paused; `--page-status` (not `--status`) filters page results on `check` — avoids collision with the global `--status` flag. Monitoring is not available for zero-data-retention teams.
+This browser flow is different from `https://www.firecrawl.dev/auth.md`. Use `auth.md` only when the agent platform can mint a WorkOS ID-JAG identity assertion and wants to exchange it directly at `/agent/auth`. Use this path when a human needs to authorize Firecrawl in the browser and hand an API key back to the agent or project.
 
-**JSON-mode change tracking:** By default monitors diff each page's markdown and you get a unified text diff back. When you care about **specific structured fields** (price, headline, in-stock flag, items in a list) instead of the whole page, add a `changeTracking` format with `modes: ["json"]` and a JSON schema to the target's `scrapeOptions.formats`. The flag-based form doesn't cover this — pass a JSON body via file or stdin:
+If you ran the install command above with `--browser`, the human was
+already prompted to sign in. Check if the key is available before
+running this flow.
 
-```bash
-cat > pricing-monitor.json <<'EOF'
-{
-  "name": "Pricing watch",
-  "goal": "Alert when plan prices or headline features change",
-  "schedule": { "text": "hourly", "timezone": "UTC" },
-  "targets": [{
-    "type": "scrape",
-    "urls": ["https://example.com/pricing"],
-    "scrapeOptions": {
-      "formats": [{
-        "type": "changeTracking",
-        "modes": ["json"],
-        "prompt": "Extract pricing tiers and headline features for each plan.",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "plans": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name":     { "type": "string" },
-                  "price":    { "type": "string" },
-                  "features": { "type": "array", "items": { "type": "string" } }
-                }
-              }
-            }
-          }
-        }
-      }]
-    }
-  }]
-}
-EOF
-firecrawl monitor create pricing-monitor.json
-```
+If you already have a valid `FIRECRAWL_API_KEY`, skip this path.
 
-The `check` response then carries a per-field diff (paths like `plans[0].price`) and the full extraction at this run, instead of (or in addition to) a markdown diff. Each changed page in `pages[]` looks like:
+If you're the human reading this in the browser, create an account or
+sign in at:
 
-```json
-{
-  "url": "https://example.com/pricing",
-  "status": "changed",
-  "diff": {
-    "json": {
-      "plans[0].price": { "previous": "$19/mo", "current": "$24/mo" },
-      "plans[1].features[2]": {
-        "previous": "10 GB storage",
-        "current": "25 GB storage"
-      }
-    }
-  },
-  "snapshot": {
-    "json": {
-      "plans": [
-        /* current full extraction */
-      ]
-    }
-  }
-}
-```
+- https://www.firecrawl.dev/signin?view=signup&source=agent-suggested
 
-Use `modes: ["json", "git-diff"]` for **mixed mode**: you get both `diff.json` (per-field) and `diff.text` (markdown sidecar), and the page is marked `changed` whenever either surface changed. For markdown-only monitors, `diff.text` holds the unified diff and `diff.json` is a `parse-diff` AST (`{ files: [...] }`); there is no `snapshot`.
+If you're an agent and need the human to authorize an API key, use this
+flow:
 
-**Avoid redundant fetches:**
-
-- `search --scrape` already fetches full page content. Don't re-scrape those URLs.
-- Check `.firecrawl/` for existing data before fetching again.
-
-## When to Load References
-
-- **Searching the web or finding sources first** -> [firecrawl-search](../firecrawl-search/SKILL.md)
-- **Scraping a known URL** -> [firecrawl-scrape](../firecrawl-scrape/SKILL.md)
-- **Finding URLs on a known site** -> [firecrawl-map](../firecrawl-map/SKILL.md)
-- **Bulk extraction from a docs section or site** -> [firecrawl-crawl](../firecrawl-crawl/SKILL.md)
-- **AI-powered structured extraction from complex sites** -> [firecrawl-agent](../firecrawl-agent/SKILL.md)
-- **Clicks, forms, login, pagination, or post-scrape browser actions** -> [firecrawl-interact](../firecrawl-interact/SKILL.md)
-- **Downloading a site to local files** -> [firecrawl-download](../firecrawl-download/SKILL.md)
-- **Parsing a local file (PDF, DOCX, XLSX, HTML, etc.)** -> [firecrawl-parse](../firecrawl-parse/SKILL.md)
-- **Detecting content changes on a website and getting notified by webhook or email (pricing, jobs, posts, docs, status pages, anything ongoing)** -> [firecrawl-monitor](../firecrawl-monitor/SKILL.md)
-- **Install, auth, or setup problems** -> [rules/install.md](rules/install.md)
-- **Output handling and safe file-reading patterns** -> [rules/security.md](rules/security.md)
-- **Integrating Firecrawl into an app, adding `FIRECRAWL_API_KEY` to `.env`, or choosing endpoint usage in product code** -> use the `firecrawl-build` skills (already installed alongside this CLI skill)
-- **Producing Firecrawl-powered deliverables such as research briefs, SEO audits, QA reports, lead lists, knowledge bases, or design-system extraction** -> use the `firecrawl-workflows` skills (already installed alongside this CLI skill). These skills infer from context first and ask only short blocking questions when needed.
-
-## Output & Organization
-
-Unless the user specifies to return in context, write results to `.firecrawl/` with `-o`. Add `.firecrawl/` to `.gitignore`. Always quote URLs - shell interprets `?` and `&` as special characters.
+**Step 1 — Generate auth parameters:**
 
 ```bash
-firecrawl search "react hooks" -o .firecrawl/search-react-hooks.json --json
-firecrawl scrape "<url>" -o .firecrawl/page.md
+SESSION_ID=$(openssl rand -hex 32)
+CODE_VERIFIER=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' | head -c 43)
+CODE_CHALLENGE=$(printf '%s' "$CODE_VERIFIER" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')
 ```
 
-Naming conventions:
+**Step 2 — Ask the human to open this URL:**
 
 ```
-.firecrawl/search-{query}.json
-.firecrawl/search-{query}-scraped.json
-.firecrawl/{site}-{path}.md
+https://www.firecrawl.dev/cli-auth?code_challenge=$CODE_CHALLENGE&source=coding-agent#session_id=$SESSION_ID
 ```
 
-Never read entire output files at once. Use `grep`, `head`, or incremental reads:
+If they already have a Firecrawl account, they'll sign in and authorize.
+If not, they'll create one first and then authorize. The API key comes
+back to you automatically after they click "Authorize."
+
+**Step 3 — Poll for the API key:**
 
 ```bash
-wc -l .firecrawl/file.md && head -50 .firecrawl/file.md
-grep -n "keyword" .firecrawl/file.md
+POST https://www.firecrawl.dev/api/auth/cli/status
+Content-Type: application/json
+
+{"session_id": "$SESSION_ID", "code_verifier": "$CODE_VERIFIER"}
 ```
 
-Single format outputs raw content. Multiple formats (e.g., `--format markdown,links`) output JSON.
+Poll every 3 seconds. Responses:
 
-## Working with Results
+- `{"status": "pending"}` — keep polling
+- `{"status": "complete", "apiKey": "fc-...", "teamName": "..."}` — done
 
-These patterns are useful when working with file-based output (`-o` flag) for complex tasks:
+**Step 4 — Save the key and continue:**
 
 ```bash
-# Extract URLs from search
-jq -r '.data.web[].url' .firecrawl/search.json
-
-# Get titles and URLs
-jq -r '.data.web[] | "\(.title): \(.url)"' .firecrawl/search.json
+echo "FIRECRAWL_API_KEY=fc-..." >> .env
 ```
 
-## After search: send feedback (refunds 1 credit)
+---
 
-Search costs 2 credits per call. **After you finish using a search result**, send structured feedback in the background. The first feedback per search id refunds 1 credit and feeds search-quality improvements.
+## Path E: Use Firecrawl Without Installing Anything
 
-```bash
-SEARCH_ID=$(jq -r '.id' .firecrawl/search-react-hooks.json)
+Use this when you don't want to install a CLI or skills package. This
+works for both use cases:
 
-firecrawl search-feedback "$SEARCH_ID" \
-  --rating good \
-  --valuable-sources '[{"url":"https://react.dev/reference/react/hooks","reason":"Authoritative"}]' \
-  --missing-content '[{"topic":"useDeferredValue example"},{"topic":"Server Components hooks"}]' \
-  --query-suggestions "Boost react.dev for react-hooks queries" \
-  --silent &
-```
+- **Live web work** — an agent calling the API directly for search,
+  scrape, or interact during a session
+- **Building with Firecrawl** — integrating the REST API into app code
 
-The most useful field is `--missing-content`: an _array_ of specific pieces of content you expected to find but didn't. Use one entry per missing topic. Bad/partial feedback with detailed `--missing-content` is just as valuable as good feedback.
+You still need an API key. Two ways to get one:
 
-**Opt out:** `export FIRECRAWL_NO_SEARCH_FEEDBACK=1` makes the CLI skip every feedback call silently. Respect that flag — do not try to work around it. See [firecrawl-search](../firecrawl-search/SKILL.md) for the full pattern.
+- **Human pastes it in** — if you already have a key, just set
+  `FIRECRAWL_API_KEY=fc-...` in your environment or pass it directly
+- **Automated flow** — do Path D to walk the human through browser auth
+  and receive the key automatically
 
-## Parallelization
+**Base URL:** `https://api.firecrawl.dev/v2`
 
-Run independent operations in parallel. Check `firecrawl --status` for concurrency limit:
+**Auth header:** `Authorization: Bearer fc-YOUR_API_KEY`
 
-```bash
-firecrawl scrape "<url-1>" -o .firecrawl/1.md &
-firecrawl scrape "<url-2>" -o .firecrawl/2.md &
-firecrawl scrape "<url-3>" -o .firecrawl/3.md &
-wait
-```
+### Available endpoints
 
-For interact, scrape multiple pages and interact with each independently using their scrape IDs.
+- `POST /search` — discover pages by query, returns results with optional full-page content
+- `POST /scrape` — extract clean markdown from a single URL
+- `POST /interact` — browser actions on live pages (clicks, forms, navigation)
+- `POST /support/ask` — diagnose a failing Firecrawl call. Pass `{ question, jobId? }`; returns a prose `answer` plus machine-readable `fixParameters` to retry with. Auto-scoped to your team via the bearer key
+- `POST /support/docs-search` — answer "how do I…" questions from Firecrawl's official docs. Pass `{ question }`; returns the answer plus citations to the docs pages used
 
-## Credit Usage
+### Documentation and references
 
-```bash
-firecrawl credit-usage
-firecrawl credit-usage --json --pretty -o .firecrawl/credits.json
+The API docs are the source of truth for request/response schemas,
+parameters, and SDKs:
+
+- **API reference:** https://docs.firecrawl.dev
+- **Skills repo** (for agent integration patterns): https://github.com/firecrawl/skills
+
+---
+
+## Session-specific auth
+
+Provide the API key via the environment (do **not** commit it to the repo).
+Set it as `FIRECRAWL_API_KEY` in a gitignored `.env`, or supply it through
+the Claude Code environment's encrypted environment-variable settings:
+
+```dotenv
+FIRECRAWL_API_KEY=fc-...   # redacted; supply your own key, do not commit
 ```

@@ -1,0 +1,6 @@
+# NWLR page snapshots (may contain subscription content — never commit)
+nwlr/results/
+
+__pycache__/
+*.pyc
+.venv/
